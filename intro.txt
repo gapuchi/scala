@@ -1,0 +1,53 @@
+Scripts
+- Cannot be compiled because of simplification
+    - You don't have to wrap declarations in objects
+    - scala command automatically wraps your code in an anon object
+
+- If you want to compile your script, add -Xscript option to scalac
+
+
+Variables
+- val : immutable variable declaration
+- var : mutable variable declaration
+
+    val book = "Programming Scala"
+
+    Scala looks at the literal value "Programming Scala" and infers the type of java.lang.String
+
+
+Method Definition
+    def <method name> (<argument list>) <optional return type> = {...}
+
+Parameterized Type
+    Seq[String]
+- A type that has a parameter
+
+
+Function literal
+- anonymous functions
+    `_` is a placeholder variable, which can be used in place of a variable that is used once in function literals
+
+
+Classes ...
+
+    case class Point(x: Double = 0.0, y: Double = 0.0)
+
+- arguments after the class name are used as the primary constructor
+- `case` keyword makes the arguments immutable
+- the `=` after method arguments provide a default values
+- case classes have companion object automatically created with them
+
+... and Objects
+- Use `object` keyword to create a singleton, `class` otherwise
+- Object is analogous to static in Java
+- When an argument list is placed after an object, it looks for an apply method
+
+
+Partial Function
+- Function that is not defined at all values
+
+    def <method name> = {
+        case 1 => ...
+        case 2 => ...
+    }
+
