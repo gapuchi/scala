@@ -146,3 +146,64 @@ Rules for compiler lookup and conversions:
 5. No conversion is attempted if more than one possible conversion method could be applied. There must be one and only one, unambiguous possibility.
 
 ## Type Class Pattern
+
+Type classes help avoid "kitchen-sink" abstractions (think of Java's `Object` that contains all, although not always useful, methods. Like `toString`). In Scala, we can add behavior on an ad hoc basis. **We aren't changing the types**. We are using implicit mechanism to wrap objects with types that have the behavior we want.
+
+`Object.toString` isn't always useful, sometimes just printing the address of an object in the JVM heap. Scala provides a better use case. There are times for example we would want JSON to be human readable. We could use implicit conversions to add `toJSON` methods to any type.
+
+Introducing the *Type Class Pattern*
+
+`toJSON` example
+
+```scala
+case class Address(street: String, city: String)
+case class Person(name: String, address: Address)
+
+trait ToJSON {
+    def toJSON(level: Int = 0): String
+
+    val INDENTATION = " "
+    def indentation(level: Int = 0): (String,String) =
+        (INDENTATION * level, INDENTATION * (level+1))
+}
+
+implicit class AddressToJSON(address: Address) extends ToJSON {
+    def toJSON(level: Int = 0): String = {
+        val (outdent, indent) = indentation(level)
+        s"""{
+        |${indent}"street": "${address.street}",
+        |${indent}"city": "${address.city}"
+        |$outdent}""".stripMargin
+    }
+}
+
+implicit class PersonToJSON(person: Person) extends ToJSON {
+    def toJSON(level: Int = 0): String = {
+        val (outdent, indent) = indentation(level)
+        s"""{
+        |${indent}"name": "${person.name}",
+        |${indent}"address": ${person.address.toJSON(level + 1)}
+        |$outdent}""".stripMargin
+    }
+}
+val a = Address("1 Scala Lane", "Anytown")
+val p = Person("Buck Trends", a)
+
+println(a.toJSON())
+println()
+println(p.toJSON())
+```
+
+`toJSON` added to an existing classes. So it can be considered to be *extension methods*.
+
+`toJSON` is not fixed to one class. So it can be considered to be *ad hoc polymorphism*.
+
+## Technical Issues with Implicits
+
+TBR
+
+## Implicit Resolution Rules
+
+TBR
+
+## TBR

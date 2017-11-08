@@ -92,3 +92,89 @@ The Value types for Scala:
 * `Unit`
 
 Instances of value types aren't stored on the heap, rather stored on the register or stack. Ther are always created with literal values. The literal for `Unit` is `()`, but that is rarely used. They actually don't have public constructors.
+
+## Value Classes
+
+Recall Scala has wrapper types to implement *type classes*. This however turns them into a reference types, removing the benefits of using a primitive type.
+
+Scala 2.10 introduces *value classes* and a feature called *universal traits*. They limit what can be declared, but don't result in heap allocation for the wrappers.
+
+To be a valid *value class*, it must:
+
+* Have one and only one `val` argument
+* The argument must not be a value class
+* If the value class is parameterized, the `@specialized` annotation can't be used
+* Doesn't define a secondary constructor
+* Defines only methods, no other `val`'s or `var`'s.
+* Can't override `equals` or `hashCode`.
+* Defines no nested `trait`s, `class`es, or `object`s
+* Cannot be subclassed
+* Can only inherit from *universal traits*
+* Must be a top level type or a member of an object that can be referenced.
+
+```scala
+class Dollar(val value: Float) extends AnyVal {
+    override def toString = "$%.2f".format(value)
+}
+
+val benjamin = new Dollar(100)
+```
+
+```scala
+class USPhoneNumber(val s: String) extends AnyVal {
+    override def toString = {
+        val digs = digits(s)
+        val areaCode = digs.substring(0,3)
+        val exchange = digs.substring(3,6)
+        val subnumber = digs.substring(6,10)
+        s"($areaCode) $exchange-$subnumber"
+    }
+
+    private def digits(str: String): String = str.replaceAll("""\D""", "")
+}
+
+val number = new USPhoneNumber("987-654-3210")
+// Result: number: USPhoneNumber = (987) 654-3210
+```
+
+A *universal trait* has the following properties:
+
+* It derives from `Any` but not other universal traits
+* It defines only methods
+* It does no initialization of its own
+
+Here is USPhoneNumber with some universal traits:
+
+```scala
+trait Digitizer extends Any {
+    def digits(s: String): String = s.replaceAll("""\D""", "")
+}
+
+trait Formatter extends Any {
+    def format(areaCode: String, exchange: String, subnumber: String): String = 
+        s"($areaCode) $exchange-$subnumber"
+}
+
+class USPhoneNumber(val s: String) extends AnyVal with Digitizer with Formatter {
+    override def toString = {
+        val digs = digits(s)
+        val areaCode = digs.substring(0,3)
+        val exchange = digs.substring(3,6)
+        val subnumber = digs.substring(6,10)
+        format(areaCode, exchange, subnumber)
+    }
+}
+
+val number = new USPhoneNumber("987-654-3210")
+// Result: number: USPhoneNumber = (987) 654-3210
+```
+
+`Formatter` is a solution to a design problem. There are multiple ways we would like to format a number, but since `USPhoneNumber` can only take in one argument, we can't specify as an argument. So we can *mixin* `trait`s.
+
+There are cases where *universal traits* do require heap allocation:
+
+* When a value class is passed to a function expecting a universal trait that the value class implements.
+* A value calss instance is assigned to an `Array`.
+* The type of a value class is used as a type parameter.
+
+***Value type* refers to the `Short`, `Int`,`Double` etc. *Value class* refers to the new construct for custom classes derived from `AnyVal`**
