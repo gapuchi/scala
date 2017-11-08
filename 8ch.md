@@ -178,3 +178,134 @@ There are cases where *universal traits* do require heap allocation:
 * The type of a value class is used as a type parameter.
 
 ***Value type* refers to the `Short`, `Int`,`Double` etc. *Value class* refers to the new construct for custom classes derived from `AnyVal`**
+
+## Parent Types
+
+Like Java, Scala supports single inheritance. All classes must have one and only one parent class (except `Any` which has none). If we don't `extend` a parent, the default is `AnyRef`. You can `extend` *traits*, and *traits* can `extend` classes!
+
+## Constructors in Scala
+
+Scala has *primary constructors* and *auxilary/secondary constructors*. *Primary constructors* is the entire body of the class. Any parameters the constructors need are listed after the class name.
+
+```scala
+class MyClass(x: String, y: Int, z:Double) {
+    ...
+}
+```
+
+Auxilary constructors is named `this` and must call a primary or another constructor as its first line. The constructor being called must be defined prior. **Ordering matters**
+
+```scala
+case class Person(name: String, age: Option[Int], address: Option[Address]) {
+    def this(name: String) = this(name, None, None)
+
+    def this(name: String, age: Int) = this(name, Some(age), None)
+
+    def this(name: String, age: Int, address: Address) =
+        this(name, Some(age), Some(address))
+
+    def this(name: String, address: Address) = this(name, None, Some(address))
+}
+```
+
+There is a lot of re used logic for all the overloading constructors. Let's reduce by adding default values.
+
+```scala
+case class Person2(name: String, age: Option[Int] = None, address: Option[Address] = None)
+```
+
+Excellent. Let's say we want to make it even easier by removing the necessity to use the `new` keyword. Right now it will only work if we use the primary constructor. We would need to provide our own apply methods.
+
+```scala
+case class Person3(name: String, age: Option[Int] = None, address: Option[Address] = None)
+
+object Person3 {
+    // Because we are overloading a normal method (as opposed to constructors),
+    // we must specify the return type annotation, Person3 in this case.
+    def apply(name: String): Person3 = new Person3(name)
+
+    def apply(name: String, age: Int): Person3 = new Person3(name, Some(age))
+
+    def apply(name: String, age: Int, address: Address): Person3 =
+        new Person3(name, Some(age), Some(address))
+
+    def apply(name: String, address: Address): Person3 =
+        new Person3(name, address = Some(address))
+}
+```
+
+Solid
+
+## Fields in Classes
+
+Primary constructor arguments become instance fields if prefixed with `val` or `var`. For case classes, `val` is implied. For noncase classes, if we omit `val` or `var`, it doesn't become a field. They can still be referenced though in the class itself, doesn't matter if they do or don't have `val` or `var`. Use `val` or `var` if you want it to be externally visible.
+
+Scala generates the code for getters and setter automatically.
+
+```scala
+class Name(var value: String)
+```
+
+Is basically:
+
+```scala
+class Name(s: String) {
+    private var _value: String = s
+
+    def value: String = _value
+
+    def value_=(newValue: String): Unit = _value = newValue
+}
+```
+
+Note the method `value_=`. When the compiler sees this, it allows the `_` to be dropped. So we can write `object.value = "Tom"` without the compiler yelling at us and makes it seem like we're directly changing the field.
+
+### The Uniform Access Principle
+
+Scala doesn't follow the convention of JavaBeans. It doesn't create methods such as `getValue` or `setValue`. Rather getting and setting would be both accessed as `value`. It isn't accessing the field directly, it is calling a method with the name `value`. The get and set is identical, calling `value`. This makes it convenient.
+
+### Unary Methods
+
+So the `_` can be dropped to make functions look nice, but what about **unary operations** like negate? For example if I have a number `c`, I'd like to call `-c`. Here's how:
+
+```scala
+case class Complex(real: Double, imag: Double) {
+    def unary_- : Complex = Complex(-real, imag)
+    def -(other: Complex) = Complex(real - other.real, imag - other.imag)
+}
+
+val c1 = Complex(1.1, 2.2)
+val c2 = -c1                        // Complex(-1.1, 2.2)
+val c3 = c1.unary_-                 // Complex(-1.1, 2.2)
+val c4 = c1 - Complex(0.5, 1.0)     // Complex(0.6, 1.2)
+```
+
+The method is `unary_X` where `X` is the operator we want to use.
+
+## Validating Input
+
+`Predef` provides a set of overloaded methods called `require`. Also `ensuring` and `assume` methods exist.
+
+## Calling Parent Class Constructors
+
+A child class must invoke one of the parent constructors.
+
+```scala
+case class Person(
+    name: String,
+    age: Option[Int] = None,
+    address: Option[Address] = None)
+
+class Employee(
+    name: String,
+    age: Option[Int] = None,
+    address: Option[Address] = None,
+    val title: String = "[unknown]",
+    val manager: Option[Employee] = None) extends Person(name, age, address) { ... }
+```
+
+We don't need to call super because the `extends` tells how it is being called.
+
+### Good OO Design
+
+The code above sucks. TBR
