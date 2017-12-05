@@ -91,7 +91,7 @@ The Value types for Scala:
 * `Byte`
 * `Unit`
 
-Instances of value types aren't stored on the heap, rather stored on the register or stack. Ther are always created with literal values. The literal for `Unit` is `()`, but that is rarely used. They actually don't have public constructors.
+Instances of value types aren't stored on the heap, rather stored on the register or stack. They are always created with literal values. The literal for `Unit` is `()`, but that is rarely used. They actually don't have public constructors.
 
 ## Value Classes
 
